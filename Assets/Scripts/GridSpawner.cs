@@ -22,6 +22,10 @@ public class GridSpawner : MonoBehaviour
     void Start()
     {
         GenerateGrid();
+    }
+
+    public void StartGameSpawning()
+    {
         StartCoroutine(SpawnRoutine());
     }
 

@@ -53,7 +53,15 @@ public class Mole : MonoBehaviour, IPointerDownHandler
         if (spriteRenderer != null) spriteRenderer.sprite = hitSprite;
         if (col2D != null) col2D.enabled = false;
         
-        Debug.Log("Whack! (Hit)");
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.AddScore();
+        }
+        else
+        {
+            Debug.LogWarning("GameManager not found in scene! Missing Score feature.");
+            Debug.Log("Whack! (Hit)");
+        }
         
         currentCoroutine = StartCoroutine(ShowResultAndReset());
     }
@@ -66,6 +74,16 @@ public class Mole : MonoBehaviour, IPointerDownHandler
         if (spriteRenderer != null) spriteRenderer.sprite = missSprite;
         if (col2D != null) col2D.enabled = false;
         
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.AddMiss();
+        }
+        else
+        {
+            Debug.LogWarning("GameManager not found in scene! Missing Miss feature.");
+            Debug.Log("Miss! (Timeout)");
+        }
+
         currentCoroutine = StartCoroutine(ShowResultAndReset());
     }
 
