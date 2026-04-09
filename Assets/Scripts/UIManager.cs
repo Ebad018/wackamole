@@ -68,24 +68,21 @@ public class UIManager : MonoBehaviour
         if (optionsScreen != null) optionsScreen.SetActive(false);
     }
 
-    public void ShowOptionsScreen()
+    public void ToggleOptionsScreen()
     {
-        startScreen.SetActive(false);
-        if (optionsScreen != null) optionsScreen.SetActive(true);
-        
-        // Sync sliders with current AudioManager state
-        if (AudioManager.Instance != null)
+        if (optionsScreen != null)
         {
-            if (masterVolSlider != null) masterVolSlider.value = AudioManager.Instance.masterVolume;
-            if (musicVolSlider != null) musicVolSlider.value = AudioManager.Instance.musicVolume;
-            if (sfxVolSlider != null) sfxVolSlider.value = AudioManager.Instance.sfxVolume;
+            bool isActive = optionsScreen.activeSelf;
+            optionsScreen.SetActive(!isActive);
+            
+            // Sync sliders with current AudioManager state when opening
+            if (!isActive && AudioManager.Instance != null)
+            {
+                if (masterVolSlider != null) masterVolSlider.value = AudioManager.Instance.masterVolume;
+                if (musicVolSlider != null) musicVolSlider.value = AudioManager.Instance.musicVolume;
+                if (sfxVolSlider != null) sfxVolSlider.value = AudioManager.Instance.sfxVolume;
+            }
         }
-    }
-
-    public void HideOptionsScreen()
-    {
-        if (optionsScreen != null) optionsScreen.SetActive(false);
-        startScreen.SetActive(true);
     }
 
     public void OnVolumeChanged()
@@ -98,6 +95,7 @@ public class UIManager : MonoBehaviour
 
     public void OnPlayButtonPressed()
     {
+        if (optionsScreen != null) optionsScreen.SetActive(false);
         currentTime = gameDuration;
         UpdateStatsUI();
         
@@ -143,6 +141,7 @@ public class UIManager : MonoBehaviour
     
     public void OnPlayAgainButtonPressed()
     {
+        if (optionsScreen != null) optionsScreen.SetActive(false);
         currentTime = gameDuration;
         UpdateStatsUI();
 
