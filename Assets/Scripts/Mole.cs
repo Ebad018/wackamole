@@ -23,6 +23,9 @@ public class Mole : MonoBehaviour, IPointerDownHandler
     public Sprite explodedBombSprite;
     public Sprite missBombSprite;
 
+    [Header("Bomb Extra Component")]
+    public SpriteRenderer bombHoleBackground; // Assign a separate hole sprite here so it stays visible behind the bomb!
+
     private SpriteRenderer spriteRenderer;
     private Collider2D col2D;
     
@@ -55,6 +58,9 @@ public class Mole : MonoBehaviour, IPointerDownHandler
         
         if (spriteRenderer != null) 
             spriteRenderer.sprite = isBomb ? hitableBombSprite : hitableSprite;
+            
+        if (isBomb && bombHoleBackground != null)
+            bombHoleBackground.enabled = true;
             
         if (col2D != null) col2D.enabled = true;
         
@@ -152,6 +158,7 @@ public class Mole : MonoBehaviour, IPointerDownHandler
         isBomb = false;
         
         if (spriteRenderer != null) spriteRenderer.sprite = emptyHoleSprite;
+        if (bombHoleBackground != null) bombHoleBackground.enabled = false;
         if (col2D != null) col2D.enabled = false;
     }
 
@@ -170,6 +177,7 @@ public class Mole : MonoBehaviour, IPointerDownHandler
     {
         if (currentCoroutine != null) StopCoroutine(currentCoroutine);
         IsPermanentlyExploded = false;
+        if (bombHoleBackground != null) bombHoleBackground.enabled = false; // Reset the bomb background
         SetStateEmpty();
     }
     
