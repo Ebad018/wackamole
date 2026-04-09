@@ -25,6 +25,7 @@ public class UIManager : MonoBehaviour
     [Header("Game Settings")]
     public float gameDuration = 15f;
     private float currentTime;
+    private bool isSyncingSliders = false;
 
     private void Start()
     {
@@ -78,15 +79,19 @@ public class UIManager : MonoBehaviour
             // Sync sliders with current AudioManager state when opening
             if (!isActive && AudioManager.Instance != null)
             {
+                isSyncingSliders = true;
                 if (masterVolSlider != null) masterVolSlider.value = AudioManager.Instance.masterVolume;
                 if (musicVolSlider != null) musicVolSlider.value = AudioManager.Instance.musicVolume;
                 if (sfxVolSlider != null) sfxVolSlider.value = AudioManager.Instance.sfxVolume;
+                isSyncingSliders = false;
             }
         }
     }
 
     public void OnVolumeChanged()
     {
+        if (isSyncingSliders) return;
+        
         if (AudioManager.Instance != null && masterVolSlider != null && musicVolSlider != null && sfxVolSlider != null)
         {
             AudioManager.Instance.UpdateVolumes(masterVolSlider.value, musicVolSlider.value, sfxVolSlider.value);
