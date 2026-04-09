@@ -23,10 +23,18 @@ public class Mole : MonoBehaviour, IPointerDownHandler
     public Sprite explodedBombSprite;
     public Sprite missBombSprite;
 
-    [Header("Bomb Extra Component")]
-    public SpriteRenderer bombHoleBackground; // Assign a separate hole sprite here so it stays visible behind the bomb!
+    [Header("Bomb Sprites Optional")]
+    [Tooltip("If empty, uses the normal emptyHoleSprite")]
+    public Sprite emptyBombHoleSprite; 
+
+    [Header("Bomb Animation Settings")]
+    public float pulseDuration = 0.3f;
+    public float pulseScaleBig = 1.2f;
+    public float pulseScaleNormal = 1.0f;
+    public float finalExpandScale = 1.5f;
 
     private SpriteRenderer spriteRenderer;
+    private SpriteRenderer generatedBackgroundHole;
     private Collider2D col2D;
     
     public bool IsHidden { get; private set; } = true;
@@ -39,6 +47,17 @@ public class Mole : MonoBehaviour, IPointerDownHandler
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         col2D = GetComponent<Collider2D>();
+        
+        // Dynamically create a background hole renderer so you don't have to make one in the Editor
+        GameObject bgObj = new GameObject("BackgroundHole");
+        bgObj.transform.SetParent(this.transform);
+        bgObj.transform.localPosition = Vector3.zero;
+        
+        generatedBackgroundHole = bgObj.AddComponent<SpriteRenderer>();
+        generatedBackgroundHole.sprite = emptyBombHoleSprite != null ? emptyBombHoleSprite : emptyHoleSprite;
+        generatedBackgroundHole.sortingLayerID = spriteRenderer.sortingLayerID;
+        generatedBackgroundHole.sortingOrder = spriteRenderer.sortingOrder - 1; // Always place it behind the main sprite
+        generatedBackgroundHole.enabled = false;
         
         basePopUpDuration = popUpDuration;
         SetStateEmpty();
@@ -59,8 +78,9 @@ public class Mole : MonoBehaviour, IPointerDownHandler
         if (spriteRenderer != null) 
             spriteRenderer.sprite = isBomb ? hitableBombSprite : hitableSprite;
             
-        if (isBomb && bombHoleBackground != null)
-            bombHoleBackground.enabled = true;
+        // Turn on the dynamically generated hole if this is a bomb
+        if (isBomb && generatedBackgroundHole != null)
+            generatedBackgroundHole.enabled = true;
             
         if (col2D != null) col2D.enabled = true;
         
@@ -78,7 +98,6 @@ public class Mole : MonoBehaviour, IPointerDownHandler
         if (isBomb)
         {
             IsPermanentlyExploded = true;
-            if (AudioManager.Instance != null) AudioManager.Instance.PlayBombHit();
             
             currentCoroutine = StartCoroutine(BombExplosionSequence());
         }
@@ -126,15 +145,48 @@ public class Mole : MonoBehaviour, IPointerDownHandler
         currentCoroutine = StartCoroutine(ShowResultAndReset());
     }
 
+    private IEnumerator PulseScale(float targetScale, float duration)
+    {
+        Vector3 startScale = transform.localScale;
+        Vector3 endScale = new Vector3(targetScale, targetScale, targetScale);
+        float timer = 0f;
+
+        while (timer < duration)
+        {
+            timer += Time.deltaTime;
+            float t = timer / duration;
+            t = t * t * (3f - 2f * t); // Smooth step for nicer pulse
+            transform.localScale = Vector3.Lerp(startScale, endScale, t);
+            yield return null;
+        }
+        transform.localScale = endScale;
+    }
+
     private IEnumerator BombExplosionSequence()
     {
+        // Stage 1: Hit 0 - Pulse 1
         if (spriteRenderer != null) spriteRenderer.sprite = hitBomb0Sprite;
-        yield return new WaitForSeconds(0.15f);
+        yield return StartCoroutine(PulseScale(pulseScaleBig, pulseDuration / 2f));
+        yield return StartCoroutine(PulseScale(pulseScaleNormal, pulseDuration / 2f));
         
+        // Stage 2: Hit 1 - Pulse 2
         if (spriteRenderer != null) spriteRenderer.sprite = hitBombSprite;
-        yield return new WaitForSeconds(0.15f);
+        yield return StartCoroutine(PulseScale(pulseScaleBig + 0.1f, pulseDuration / 2f));
+        yield return StartCoroutine(PulseScale(pulseScaleNormal, pulseDuration / 2f));
         
+        // Stage 3: Audio and Final Expansion
+        float audioDuration = 1f;
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayBombHit();
+            audioDuration = AudioManager.Instance.GetBombHitDuration();
+        }
+        
+        yield return StartCoroutine(PulseScale(finalExpandScale, audioDuration));
+        
+        // Stage 4: Exploded
         if (spriteRenderer != null) spriteRenderer.sprite = explodedBombSprite;
+        transform.localScale = new Vector3(pulseScaleNormal, pulseScaleNormal, pulseScaleNormal); // Reset scale
         
         IsHidden = false; // Keeps it "visible" and unavailable in the spawner
         
@@ -158,7 +210,7 @@ public class Mole : MonoBehaviour, IPointerDownHandler
         isBomb = false;
         
         if (spriteRenderer != null) spriteRenderer.sprite = emptyHoleSprite;
-        if (bombHoleBackground != null) bombHoleBackground.enabled = false;
+        if (generatedBackgroundHole != null) generatedBackgroundHole.enabled = false;
         if (col2D != null) col2D.enabled = false;
     }
 
@@ -177,7 +229,8 @@ public class Mole : MonoBehaviour, IPointerDownHandler
     {
         if (currentCoroutine != null) StopCoroutine(currentCoroutine);
         IsPermanentlyExploded = false;
-        if (bombHoleBackground != null) bombHoleBackground.enabled = false; // Reset the bomb background
+        transform.localScale = new Vector3(pulseScaleNormal, pulseScaleNormal, pulseScaleNormal); // Reset scale here as well to fix weird bugs on new games
+        if (generatedBackgroundHole != null) generatedBackgroundHole.enabled = false; // Reset the bomb background
         SetStateEmpty();
     }
     

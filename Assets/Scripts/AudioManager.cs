@@ -153,4 +153,9 @@ public class AudioManager : MonoBehaviour
             sfxSource.PlayOneShot(bombHitSound, sfxVolume);
         }
     }
+
+    public float GetBombHitDuration()
+    {
+        return bombHitSound != null ? bombHitSound.length : 1f;
+    }
 }

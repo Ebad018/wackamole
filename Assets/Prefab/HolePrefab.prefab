@@ -113,7 +113,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -148,6 +148,11 @@ MonoBehaviour:
   hitBombSprite: {fileID: 6752432071180991917, guid: b227b7344623db44dbae1dc879d4c3c8, type: 3}
   explodedBombSprite: {fileID: 3104604702400515154, guid: 2833ba1d1ecea084c9cdd8849d362dd0, type: 3}
   missBombSprite: {fileID: 5593283009502921141, guid: 5f7eccfcb2a36be439b5a7af1baa6f58, type: 3}
+  emptyBombHoleSprite: {fileID: 7420242186306534008, guid: 249ba19f824a8874eaa721c20acd0e21, type: 3}
+  pulseDuration: 0.3
+  pulseScaleBig: 1.2
+  pulseScaleNormal: 1
+  finalExpandScale: 1.5
 --- !u!61 &868429804387617982
 BoxCollider2D:
   m_ObjectHideFlags: 0
