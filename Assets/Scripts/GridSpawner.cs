@@ -69,6 +69,15 @@ public class GridSpawner : MonoBehaviour
         }
     }
 
+    public void ResetAllMoles()
+    {
+        StopGameSpawning();
+        foreach (Mole mole in allMoles)
+        {
+            mole.HideAndReset();
+        }
+    }
+
     // Grid Setup
     void GenerateGrid()
     {

@@ -104,9 +104,15 @@ public class UIManager : MonoBehaviour
     }
 
     // --- Button Hooks ---
-
-    public void OnRestartButtonPressed()
+    
+    public void OnPlayAgainButtonPressed()
     {
+        currentTime = gameDuration;
+        UpdateStatsUI();
+
+        endScreen.SetActive(false);
+        hudScreen.SetActive(true);
+        
         GameManager.Instance.RestartGame();
     }
 

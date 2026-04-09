@@ -121,6 +121,13 @@ public class Mole : MonoBehaviour, IPointerDownHandler
         if (spriteRenderer != null) spriteRenderer.sprite = hitSprite;
         if (col2D != null) col2D.enabled = false;
     }
+
+    // Completely reset the mole to its hidden/empty state
+    public void HideAndReset()
+    {
+        if (currentCoroutine != null) StopCoroutine(currentCoroutine);
+        SetStateEmpty();
+    }
     
     // Input Detection
     public void OnPointerDown(PointerEventData eventData)

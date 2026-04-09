@@ -90,7 +90,12 @@ public class GameManager : MonoBehaviour
 
     public void RestartGame()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        if (gridSpawner != null)
+        {
+            gridSpawner.ResetAllMoles();
+        }
+        
+        StartGame();
     }
 
     public void ExitGame()
