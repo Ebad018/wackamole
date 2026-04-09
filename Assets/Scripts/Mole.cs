@@ -10,16 +10,25 @@ public class Mole : MonoBehaviour, IPointerDownHandler
 
     private float basePopUpDuration;
     
-    [Header("Sprites")]
+    [Header("Mole Sprites")]
     public Sprite emptyHoleSprite;
     public Sprite hitableSprite;
     public Sprite hitSprite;
     public Sprite missSprite;
 
+    [Header("Bomb Sprites")]
+    public Sprite hitableBombSprite;
+    public Sprite hitBomb0Sprite;
+    public Sprite hitBombSprite;
+    public Sprite explodedBombSprite;
+    public Sprite missBombSprite;
+
     private SpriteRenderer spriteRenderer;
     private Collider2D col2D;
     
     public bool IsHidden { get; private set; } = true;
+    public bool IsPermanentlyExploded { get; private set; } = false;
+    private bool isBomb = false;
 
     private Coroutine currentCoroutine;
 
@@ -34,87 +43,122 @@ public class Mole : MonoBehaviour, IPointerDownHandler
 
     public void SetSpeedMultiplier(float multiplier)
     {
-        // multiplier of 2.0 means twice as fast (half the duration)
         popUpDuration = basePopUpDuration / multiplier;
     }
 
-    // Spawn Setup and Hitable Sprite Switch
-    public void PopUp()
+    public void PopUp(bool spawnAsBomb = false)
     {
-        if (!IsHidden) return;
+        if (!IsHidden || IsPermanentlyExploded) return;
         
         IsHidden = false;
+        isBomb = spawnAsBomb;
         
-        if (spriteRenderer != null) spriteRenderer.sprite = hitableSprite;
+        if (spriteRenderer != null) 
+            spriteRenderer.sprite = isBomb ? hitableBombSprite : hitableSprite;
+            
         if (col2D != null) col2D.enabled = true;
         
         if (currentCoroutine != null) StopCoroutine(currentCoroutine);
         currentCoroutine = StartCoroutine(TimerToMiss());
     }
 
-    // Whack Detection and Hit Sprite Switch
     public void Whack()
     {
-        if (IsHidden) return;
+        if (IsHidden || IsPermanentlyExploded) return;
         
         if (currentCoroutine != null) StopCoroutine(currentCoroutine);
-        
-        if (spriteRenderer != null) spriteRenderer.sprite = hitSprite;
         if (col2D != null) col2D.enabled = false;
         
-        if (GameManager.Instance != null)
+        if (isBomb)
         {
-            GameManager.Instance.AddScore();
+            IsPermanentlyExploded = true;
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayBombHit();
+            
+            currentCoroutine = StartCoroutine(BombExplosionSequence());
         }
         else
         {
-            Debug.LogWarning("GameManager not found in scene! Missing Score feature.");
-            Debug.Log("Whack! (Hit)");
+            if (spriteRenderer != null) spriteRenderer.sprite = hitSprite;
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayMoleHit();
+            
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.AddScore();
+            }
+            
+            currentCoroutine = StartCoroutine(ShowResultAndReset());
         }
-        
-        currentCoroutine = StartCoroutine(ShowResultAndReset());
     }
 
-    // Miss Timer and Miss Sprite Switch
     private IEnumerator TimerToMiss()
     {
         yield return new WaitForSeconds(popUpDuration);
         
-        if (spriteRenderer != null) spriteRenderer.sprite = missSprite;
         if (col2D != null) col2D.enabled = false;
-        
-        if (GameManager.Instance != null)
+
+        if (isBomb)
         {
-            GameManager.Instance.AddMiss();
+            if (spriteRenderer != null) spriteRenderer.sprite = missBombSprite;
+            
+            // Dodging a bomb gives +1 score
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.AddScore();
+            }
         }
         else
         {
-            Debug.LogWarning("GameManager not found in scene! Missing Miss feature.");
-            Debug.Log("Miss! (Timeout)");
+            if (spriteRenderer != null) spriteRenderer.sprite = missSprite;
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayMoleMiss();
+            
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.AddMiss();
+            }
         }
 
         currentCoroutine = StartCoroutine(ShowResultAndReset());
     }
 
-    // Reset Delay
+    private IEnumerator BombExplosionSequence()
+    {
+        if (spriteRenderer != null) spriteRenderer.sprite = hitBomb0Sprite;
+        yield return new WaitForSeconds(0.15f);
+        
+        if (spriteRenderer != null) spriteRenderer.sprite = hitBombSprite;
+        yield return new WaitForSeconds(0.15f);
+        
+        if (spriteRenderer != null) spriteRenderer.sprite = explodedBombSprite;
+        
+        IsHidden = false; // Keeps it "visible" and unavailable in the spawner
+        
+        if (GameManager.Instance != null && GameManager.Instance.gridSpawner != null)
+        {
+            GameManager.Instance.gridSpawner.CheckGridDestroyed();
+        }
+    }
+
     private IEnumerator ShowResultAndReset()
     {
         yield return new WaitForSeconds(resultDisplayDuration);
         SetStateEmpty();
     }
 
-    // Empty State Setup
     private void SetStateEmpty()
     {
+        if (IsPermanentlyExploded) return;
+
         IsHidden = true;
+        isBomb = false;
         
         if (spriteRenderer != null) spriteRenderer.sprite = emptyHoleSprite;
         if (col2D != null) col2D.enabled = false;
     }
 
-    // Force the mole to show its hit state and stop all logic
     public void ForceShowHit()
     {
+        if (IsPermanentlyExploded) return;
+        
         if (currentCoroutine != null) StopCoroutine(currentCoroutine);
         
         IsHidden = false;
@@ -122,14 +166,13 @@ public class Mole : MonoBehaviour, IPointerDownHandler
         if (col2D != null) col2D.enabled = false;
     }
 
-    // Completely reset the mole to its hidden/empty state
     public void HideAndReset()
     {
         if (currentCoroutine != null) StopCoroutine(currentCoroutine);
+        IsPermanentlyExploded = false;
         SetStateEmpty();
     }
     
-    // Input Detection
     public void OnPointerDown(PointerEventData eventData)
     {
         Whack();

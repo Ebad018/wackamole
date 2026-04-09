@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class UIManager : MonoBehaviour
@@ -7,6 +8,7 @@ public class UIManager : MonoBehaviour
     public GameObject startScreen;
     public GameObject hudScreen;
     public GameObject endScreen;
+    public GameObject optionsScreen;
 
     [Header("Text Displays")]
     public TextMeshProUGUI scoreText;
@@ -14,6 +16,11 @@ public class UIManager : MonoBehaviour
     public TextMeshProUGUI timerText;
     public TextMeshProUGUI finalScoreText;
     public TextMeshProUGUI finalMissesText;
+
+    [Header("Options Settings")]
+    public Slider masterVolSlider;
+    public Slider musicVolSlider;
+    public Slider sfxVolSlider;
 
     [Header("Game Settings")]
     public float gameDuration = 15f;
@@ -58,6 +65,35 @@ public class UIManager : MonoBehaviour
         startScreen.SetActive(true);
         hudScreen.SetActive(false);
         endScreen.SetActive(false);
+        if (optionsScreen != null) optionsScreen.SetActive(false);
+    }
+
+    public void ShowOptionsScreen()
+    {
+        startScreen.SetActive(false);
+        if (optionsScreen != null) optionsScreen.SetActive(true);
+        
+        // Sync sliders with current AudioManager state
+        if (AudioManager.Instance != null)
+        {
+            if (masterVolSlider != null) masterVolSlider.value = AudioManager.Instance.masterVolume;
+            if (musicVolSlider != null) musicVolSlider.value = AudioManager.Instance.musicVolume;
+            if (sfxVolSlider != null) sfxVolSlider.value = AudioManager.Instance.sfxVolume;
+        }
+    }
+
+    public void HideOptionsScreen()
+    {
+        if (optionsScreen != null) optionsScreen.SetActive(false);
+        startScreen.SetActive(true);
+    }
+
+    public void OnVolumeChanged()
+    {
+        if (AudioManager.Instance != null && masterVolSlider != null && musicVolSlider != null && sfxVolSlider != null)
+        {
+            AudioManager.Instance.UpdateVolumes(masterVolSlider.value, musicVolSlider.value, sfxVolSlider.value);
+        }
     }
 
     public void OnPlayButtonPressed()

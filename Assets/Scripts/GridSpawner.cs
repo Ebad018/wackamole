@@ -16,6 +16,9 @@ public class GridSpawner : MonoBehaviour
     public float minSpawnTime = 0.5f;
     public float maxSpawnTime = 2.0f;
     
+    [Header("Bomb Settings")]
+    [Range(0f, 1f)] public float bombSpawnChance = 0.2f;
+    
     [Header("Difficulty Scaling")]
     public float maxSpeedMultiplier = 2.0f;
     public int maxConcurrentMoles = 3;
@@ -78,6 +81,19 @@ public class GridSpawner : MonoBehaviour
         }
     }
 
+    public void CheckGridDestroyed()
+    {
+        int availableMoles = allMoles.FindAll(m => !m.IsPermanentlyExploded).Count;
+        if (availableMoles <= 0)
+        {
+            if (GameManager.Instance != null && GameManager.Instance.isGameActive)
+            {
+                Debug.LogWarning("All holes destroyed! Ending game preemptively.");
+                GameManager.Instance.EndGame();
+            }
+        }
+    }
+
     // Grid Setup
     void GenerateGrid()
     {
@@ -119,12 +135,13 @@ public class GridSpawner : MonoBehaviour
             
             for (int i = 0; i < molesToSpawn; i++)
             {
-                List<Mole> hiddenMoles = allMoles.FindAll(m => m.IsHidden);
+                List<Mole> hiddenMoles = allMoles.FindAll(m => m.IsHidden && !m.IsPermanentlyExploded);
             
                 if (hiddenMoles.Count > 0)
                 {
                     int index = Random.Range(0, hiddenMoles.Count);
-                    hiddenMoles[index].PopUp();
+                    bool isBomb = Random.value <= bombSpawnChance;
+                    hiddenMoles[index].PopUp(isBomb);
                 }
             }
         }
