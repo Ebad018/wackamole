@@ -15,18 +15,58 @@ public class GridSpawner : MonoBehaviour
     [Header("Randomizer Settings")]
     public float minSpawnTime = 0.5f;
     public float maxSpawnTime = 2.0f;
+    
+    [Header("Difficulty Scaling")]
+    public float maxSpeedMultiplier = 2.0f;
+    public int maxConcurrentMoles = 3;
 
     private List<Mole> allMoles = new List<Mole>();
+    private float baseMinSpawnTime;
+    private float baseMaxSpawnTime;
+    private int currentMaxConcurrent = 1;
 
 
     void Start()
     {
+        baseMinSpawnTime = minSpawnTime;
+        baseMaxSpawnTime = maxSpawnTime;
         GenerateGrid();
     }
 
     public void StartGameSpawning()
     {
         StartCoroutine(SpawnRoutine());
+    }
+
+    public void StopGameSpawning()
+    {
+        StopAllCoroutines();
+    }
+
+    public void ApplyDifficulty(float progress)
+    {
+        // Calculate multipliers based on 0-1 progress
+        float speedMultiplier = Mathf.Lerp(1f, maxSpeedMultiplier, progress);
+        currentMaxConcurrent = Mathf.FloorToInt(Mathf.Lerp(1, maxConcurrentMoles + 0.99f, progress));
+
+        // Scale spawn frequency
+        minSpawnTime = baseMinSpawnTime / speedMultiplier;
+        maxSpawnTime = baseMaxSpawnTime / speedMultiplier;
+
+        // Scale individual mole pop-up duration
+        foreach (Mole mole in allMoles)
+        {
+            mole.SetSpeedMultiplier(speedMultiplier);
+        }
+    }
+
+    public void ShowAllHits()
+    {
+        StopGameSpawning();
+        foreach (Mole mole in allMoles)
+        {
+            mole.ForceShowHit();
+        }
     }
 
     // Grid Setup
@@ -65,12 +105,18 @@ public class GridSpawner : MonoBehaviour
             float waitTime = Random.Range(minSpawnTime, maxSpawnTime);
             yield return new WaitForSeconds(waitTime);
 
-            List<Mole> hiddenMoles = allMoles.FindAll(m => m.IsHidden);
+            // Spawn multiple moles depending on current difficulty
+            int molesToSpawn = Random.Range(1, currentMaxConcurrent + 1);
             
-            if (hiddenMoles.Count > 0)
+            for (int i = 0; i < molesToSpawn; i++)
             {
-                int index = Random.Range(0, hiddenMoles.Count);
-                hiddenMoles[index].PopUp();
+                List<Mole> hiddenMoles = allMoles.FindAll(m => m.IsHidden);
+            
+                if (hiddenMoles.Count > 0)
+                {
+                    int index = Random.Range(0, hiddenMoles.Count);
+                    hiddenMoles[index].PopUp();
+                }
             }
         }
     }

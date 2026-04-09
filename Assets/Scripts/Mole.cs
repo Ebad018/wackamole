@@ -7,6 +7,8 @@ public class Mole : MonoBehaviour, IPointerDownHandler
     [Header("Mole Settings")]
     public float popUpDuration = 1.5f;
     public float resultDisplayDuration = 0.5f;
+
+    private float basePopUpDuration;
     
     [Header("Sprites")]
     public Sprite emptyHoleSprite;
@@ -26,7 +28,14 @@ public class Mole : MonoBehaviour, IPointerDownHandler
         spriteRenderer = GetComponent<SpriteRenderer>();
         col2D = GetComponent<Collider2D>();
         
+        basePopUpDuration = popUpDuration;
         SetStateEmpty();
+    }
+
+    public void SetSpeedMultiplier(float multiplier)
+    {
+        // multiplier of 2.0 means twice as fast (half the duration)
+        popUpDuration = basePopUpDuration / multiplier;
     }
 
     // Spawn Setup and Hitable Sprite Switch
@@ -100,6 +109,16 @@ public class Mole : MonoBehaviour, IPointerDownHandler
         IsHidden = true;
         
         if (spriteRenderer != null) spriteRenderer.sprite = emptyHoleSprite;
+        if (col2D != null) col2D.enabled = false;
+    }
+
+    // Force the mole to show its hit state and stop all logic
+    public void ForceShowHit()
+    {
+        if (currentCoroutine != null) StopCoroutine(currentCoroutine);
+        
+        IsHidden = false;
+        if (spriteRenderer != null) spriteRenderer.sprite = hitSprite;
         if (col2D != null) col2D.enabled = false;
     }
     
